@@ -72,6 +72,7 @@ public class PMSurfaceView extends SurfaceView implements SurfaceHolder.Callback
     private PointF currentPoint = new PointF();
     private PathMeasure fingerPathMea = new PathMeasure();
     private float fingerPathLenght = 0;
+    private float fingerPathAngle = 0;
 
     public PMSurfaceView(Context context) {
         super(context);
@@ -154,9 +155,12 @@ public class PMSurfaceView extends SurfaceView implements SurfaceHolder.Callback
 //        creatPM();
         while (isRunning) {
             runTime ++;
-//            if (runTime % 8 == 0){
-//                creatPM();
-//            }
+            if (touchState != STATE_NORMAL && runTime % 8 == 0){
+                if (touchState == STATE_UP){
+                    touchState = STATE_NORMAL;
+                }
+                creatPM();
+            }
             if (runTime % 16 == 0){
                 runTime = 0;
                 draw();
@@ -290,22 +294,22 @@ public class PMSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         return input;
     }
 
-    private void creatPM(float[] tan){
+    private void creatPM(){
         for (int i = 0; i < mTotalPM; i++) {
             if (mPms[i] == null){
                 mPms[i] = new PMElement();
-                creatPMPoint(mPms[i], tan);
+                creatPMPoint(mPms[i]);
                 break;
             }
             if (mPms[i].progress >= 1){
-                creatPMPoint(mPms[i], tan);
+                creatPMPoint(mPms[i]);
                 break;
             }
         }
     }
 
-    private void creatPMPoint(PMElement pmElement, float[] tan){
-        pmElement.angleStar = Math.atan(tan[0] / tan[1]) + Math.PI * 3 / 4;
+    private void creatPMPoint(PMElement pmElement){
+        pmElement.angleStar = fingerPathAngle + Math.PI * 3 / 4;
         pmElement.centerPoint.set(currentPoint);
         pmElement.starTime = System.currentTimeMillis();
         //计算起始点的半径、夹角
@@ -372,7 +376,7 @@ public class PMSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         case MotionEvent.ACTION_UP:
             Log.d("touch--> up", touchState+"");
             if (touchState == STATE_MOVE | touchState == STATE_DOWN) {
-                touchState = STATE_NORMAL;
+                touchState = STATE_UP;
                 Log.d("touch-->", "up");
                 touchUp(event);
             }
@@ -387,9 +391,9 @@ public class PMSurfaceView extends SurfaceView implements SurfaceHolder.Callback
     public void touchDown(MotionEvent event) {
         fingerPath.reset();
         fingerPathLenght = 0;
+        fingerPathAngle = 0;
         fingerPath.moveTo(event.getX(), event.getY());
         currentPoint.set(event.getX(), event.getY());
-//        creatPM();
     }
 
     /**
@@ -403,10 +407,11 @@ public class PMSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         fingerPathMea.setPath(fingerPath, false);
         float lenght = fingerPathMea.getLength();
         if (lenght - fingerPathLenght > px2dp(3)){
+            fingerPathLenght = lenght;
             float[] pos = new float[2];
             float[] tan = new float[2];
             fingerPathMea.getPosTan(fingerPathLenght, pos, tan);
-            creatPM(tan);
+            fingerPathAngle = (float) Math.atan(tan[0] / tan[1]);
         }
     }
 
@@ -418,8 +423,12 @@ public class PMSurfaceView extends SurfaceView implements SurfaceHolder.Callback
     public void touchUp(MotionEvent event) {
         currentPoint.set(event.getX(), event.getY());
         fingerPath.lineTo(event.getX(), event.getY());
-
-//        creatPM();
+        fingerPathMea.setPath(fingerPath, false);
+        fingerPathLenght = fingerPathMea.getLength();
+        float[] pos = new float[2];
+        float[] tan = new float[2];
+        fingerPathMea.getPosTan(fingerPathLenght, pos, tan);
+        fingerPathAngle = (float) Math.atan(tan[0] / tan[1]);
 
     }
 
