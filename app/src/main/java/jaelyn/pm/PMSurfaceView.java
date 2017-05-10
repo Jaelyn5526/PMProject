@@ -429,7 +429,6 @@ public class PMSurfaceView extends SurfaceView implements SurfaceHolder.Callback
         float[] tan = new float[2];
         fingerPathMea.getPosTan(fingerPathLenght, pos, tan);
         fingerPathAngle = (float) Math.atan(tan[0] / tan[1]);
-
     }
 
     /**
